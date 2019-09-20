@@ -88,8 +88,6 @@ public class SeatAPIController extends BaseController {
     CsrService csrService;
 
 
-    private static final String QCHAT_HOST = "@ejabhost2";
-    private static final String QTALK_HOST = "@ejabhost1";
 
 
     @RequestMapping(value = "/list.do")
@@ -646,6 +644,7 @@ public class SeatAPIController extends BaseController {
                                                 @RequestParam(value = "pdtId", required = false) String pdtId,
                                                 @RequestParam(value = "seatQName", required = false) String seatQName,
                                                 @RequestParam(value = "userQName", required = false) String userQName,
+                                                @RequestParam(value = "groupId", required = false) Long groupId,
                                                 @RequestParam(value = "tEnId", required = false) String tEnId,
                                                 @RequestParam(value = "tuId", required = false) String tuId,
                                                 @RequestParam(value = "bType", required = false) Integer bType,
@@ -656,8 +655,7 @@ public class SeatAPIController extends BaseController {
         try {
             logger.info("judgementOrRedistributionEx函数 judgmentOrRedistributionEx.json  shopid {}, seatQName:{},userQName:{}", shopId, seatQName, userQName);;
 
-            String supplierId = shopId.replace(Supplier.SHOPID_PREFIX, "").replace(QCHAT_HOST, "").replace(QTALK_HOST,
-                    "");
+            String supplierId = shopId.replace(Supplier.SHOPID_PREFIX, "").replace(com.qunar.qtalk.ss.constants.Config.QCHAT_DEFAULT_HOST, "");
             if (!shopId.startsWith(Supplier.SHOPID_PREFIX) || Long.valueOf(supplierId) <= 0) {
                 logger.info("judgementOrRedistributionEx函数 judgmentOrRedistributionEx.json  shopid {}, 店铺id错误", shopId);
                 return JsonData.error(shopId + "，店铺id错误");
@@ -681,7 +679,7 @@ public class SeatAPIController extends BaseController {
 
             pdtId = StringUtils.isEmpty(pdtId) ? QtSessionItem.DEFAULT_PRODUCTID : pdtId;
 
-            return seatService.redistributionEx(lSuppllierId, fromJid, pdtId, seatQName, host);
+            return seatService.redistributionEx(lSuppllierId, fromJid, pdtId, seatQName, host, groupId);
         } catch (Exception e) {
             logger.error("/judgmentOrRedistributionEx.json接口出错,shopId:{},seatQName:{},userQName:{}", shopId, seatQName,
                     userQName, e);
@@ -696,6 +694,7 @@ public class SeatAPIController extends BaseController {
             @RequestParam(value = "shopId") String shopId,
             @RequestParam(value = "seatQName", required = false) String seatQName,
             @RequestParam(value = "userQName", required = false) String userQName,
+            @RequestParam(value = "groupId", required = false) Long groupId,
             @RequestParam(value = "pdtId", required = false) String pdtId,
             @RequestParam(value = "host", required = false) String host,
             HttpServletRequest request) {
@@ -709,7 +708,7 @@ public class SeatAPIController extends BaseController {
                     request.getParameter("shopId"),
                     request.getParameter("pdtId"),
                     request.getParameter("seatQName"),
-                    request.getParameter("userQName"),
+                    request.getParameter("userQName"), groupId,
                     request.getParameter("tEnId"),
                     request.getParameter("tuId"),
                     null == request.getParameter("bType") ? null : Integer.valueOf(request.getParameter("bType")),
@@ -773,8 +772,7 @@ public class SeatAPIController extends BaseController {
             if (StringUtils.isEmpty(shopId)) {
                 return JsonData.error("店铺id错误");
             }
-            String supplierId = shopId.replace(Supplier.SHOPID_PREFIX, "").replace(QCHAT_HOST, "").replace(QTALK_HOST,
-                    "");
+            String supplierId = shopId.replace(Supplier.SHOPID_PREFIX, "").replace(com.qunar.qtalk.ss.constants.Config.QCHAT_DEFAULT_HOST, "");
             if (!shopId.startsWith(Supplier.SHOPID_PREFIX) || Long.valueOf(supplierId) <= 0) {
                 logger.info("judgementOrRedistribution函数 judgmentOrRedistributionEx.json 店铺id错误 shopId:{},seatQName:{},userQName:{}", shopId, seatQName, userQName);
                 return JsonData.error(shopId + "，店铺id错误");

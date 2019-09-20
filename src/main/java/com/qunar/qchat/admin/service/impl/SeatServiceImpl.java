@@ -30,6 +30,8 @@ import com.qunar.qchat.admin.service.sortstrategy.PollingASeatStrategy;
 import com.qunar.qchat.admin.util.*;
 import com.qunar.qchat.admin.vo.*;
 import com.qunar.qchat.admin.vo.conf.JsonData;
+import com.qunar.qtalk.ss.sift.dao.HostUserDao;
+import com.qunar.qtalk.ss.sift.entity.HostUsers;
 import com.qunar.qtalk.ss.utils.common.CacheHelper;
 import com.qunar.qtalk.ss.utils.JID;
 import com.qunar.qtalk.ss.consult.ConsultUtils;
@@ -110,17 +112,10 @@ public class SeatServiceImpl implements ISeatService {
     ShopService shopService;
     @Autowired
     QueueMappingDao queueMappingDao;
+    @Resource
+    HostUserDao hostUserDao;
 
-//    private static final String DOMAIN1_NAME = "ejabhost1";
-//    private static final String HOTEL_SETTLEMENT_SUPPLIERID = "0";
-//    private static final long DEFAULT_FOR_NULL_TIME = new Date(0).getTime();
 
-//    private static final Function<SeatAndGroup, String> getQunarName = new Function<SeatAndGroup, String>() {
-//        @Override
-//        public String apply(SeatAndGroup seatAndGroup) {
-//            return seatAndGroup.getQunarName();
-//        }
-//    };
 
     private static final Function<SeatWithStateVO, String> getSeatName = new Function<SeatWithStateVO, String>() {
         @Override
@@ -1066,12 +1061,12 @@ public class SeatServiceImpl implements ISeatService {
     }
 
     @Override
-    public List<Seat> getSeatListByQunarNames(List<String> qunarName) {
+    public List<Seat> getSeatListByQunarNames(List<String> qunarName, List<Long> shopIdsStr) {
         if (CollectionUtil.isNotEmpty(qunarName)) {
-//            for (String name : qunarName) {
-//                name.toLowerCase();
-//            }
-            return seatDao.getSeatListByQunarNames(qunarName);
+            if (CollectionUtils.isNotEmpty(shopIdsStr) && (shopIdsStr.size() == 1)) {
+                return seatDao.getSeatListByQunarNames(qunarName, shopIdsStr.get(0));
+            }
+            return seatDao.getSeatListByQunarNames(qunarName, null);
         }
         return null;
     }
@@ -1090,8 +1085,9 @@ public class SeatServiceImpl implements ISeatService {
         List<Map<String, Object>> robots = Lists.newArrayList();
 
         List<String> shopIdsStr = Lists.newArrayList(Collections2.filter(qunarNames, isShop));
+        List<Long> shopIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(shopIdsStr)) {
-            List<Long> shopIds = Lists.transform(shopIdsStr, getShopId);
+            shopIds = Lists.transform(shopIdsStr, getShopId);
             shops = SupplierServiceUtil.buildSupplierInfo(shopIds);
             if (!CollectionUtil.isEmpty(shops))
                 userInfoList.addAll(shops);
@@ -1110,8 +1106,8 @@ public class SeatServiceImpl implements ISeatService {
                 userInfoList.addAll(robots);
         }
 
-        Map<String, ?> UserInfoMap = getUserInfoByQunarNames(qunarNames, fields);
-        if (CollectionUtil.isEmpty(UserInfoMap)) {
+        List<Map<String, Object>> userInfos = getUserInfoByQunarNames(qunarNames, fields);
+        if (CollectionUtil.isEmpty(userInfos)) {
             if (CollectionUtil.isEmpty(userInfoList)) {
                 return null;
             } else {
@@ -1121,8 +1117,8 @@ public class SeatServiceImpl implements ISeatService {
 
 
         try {
-            @SuppressWarnings("unchecked") List<Map<String, Object>> userInfos
-                    = (List<Map<String, Object>>) UserInfoMap.get("data");
+//            @SuppressWarnings("unchecked") List<Map<String, Object>> userInfos
+//                    = (List<Map<String, Object>>) UserInfoMap.get("data");
             if (!CollectionUtil.isEmpty(userInfos)) {
 
                 for (Map<String, Object> userinfo : userInfos) {
@@ -1149,7 +1145,7 @@ public class SeatServiceImpl implements ISeatService {
                 return null;
             }
 
-            Map<String, Seat> seatIndexMap = getSeatIndex(getSeatListByQunarNames(qunarNames));
+            Map<String, Seat> seatIndexMap = getSeatIndex(getSeatListByQunarNames(qunarNames, shopIds));
             if (CollectionUtil.isEmpty(seatIndexMap)) {
                 if (!CollectionUtil.isEmpty(userInfoList)) {
                     return JacksonUtil.string2Map(JacksonUtil.obj2String(JsonData.success(userInfoList)));
@@ -1176,50 +1172,52 @@ public class SeatServiceImpl implements ISeatService {
 
     @Override
     public Map<String, ?> getNewUserAndSeatInfo(List<String> qunarNames, String fields) {
-        // 过滤店铺id
-        List<Map<String, Object>> userInfoList = Lists.newArrayList();
+        try {
+            // 过滤店铺id
+            List<Map<String, Object>> userInfoList = Lists.newArrayList();
 
-        List<Map<String, Object>> shops = Lists.newArrayList();
-        List<Map<String, Object>> robots = Lists.newArrayList();
-        List<Map<String, Object>> bnbs = Lists.newArrayList();
+            List<Map<String, Object>> shops = Lists.newArrayList();
+            List<Map<String, Object>> robots = Lists.newArrayList();
+            List<Map<String, Object>> bnbs = Lists.newArrayList();
 
-        List<String> shopIdsStr = Lists.newArrayList(Collections2.filter(qunarNames, isShop));
-        if (CollectionUtils.isNotEmpty(shopIdsStr)) {
-            List<Long> shopIds = Lists.transform(shopIdsStr, getShopId);
-            shops = SupplierServiceUtil.buildSupplierInfo(shopIds);
-            if (!CollectionUtil.isEmpty(shops))
-                userInfoList.addAll(shops);
-        }
-        //过滤途家bnb_信息
-        List<String> bnbids = Lists.newArrayList(Collections2.filter(qunarNames, new Predicate<String>() {
-            @Override
-            public boolean apply(String s) {
-                return s.startsWith("demo_");
+            List<String> shopIdsStr = Lists.newArrayList(Collections2.filter(qunarNames, isShop));
+            List<Long> shopIds = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(shopIdsStr)) {
+                shopIds = Lists.transform(shopIdsStr, getShopId);
+                shops = SupplierServiceUtil.buildSupplierInfo(shopIds);
+                if (!CollectionUtil.isEmpty(shops))
+                    userInfoList.addAll(shops);
             }
-        }));
-        if(!CollectionUtil.isEmpty(bnbids)) {
-            bnbs = getBnbUserInfoByQunarNames(bnbids);
-            if(!CollectionUtil.isEmpty(bnbs)) {
-                userInfoList.addAll(bnbs);
+            //过滤途家bnb_信息
+            List<String> bnbids = Lists.newArrayList(Collections2.filter(qunarNames, new Predicate<String>() {
+                @Override
+                public boolean apply(String s) {
+                    return s.startsWith("demo_");
+                }
+            }));
+            if (!CollectionUtil.isEmpty(bnbids)) {
+                bnbs = getBnbUserInfoByQunarNames(bnbids);
+                if (!CollectionUtil.isEmpty(bnbs)) {
+                    userInfoList.addAll(bnbs);
+                }
             }
-        }
 
 
-        // 过滤店铺机器人信息
-        List<String> robotids = Lists.newArrayList(Collections2.filter(qunarNames, new Predicate<String>() {
-            @Override
-            public boolean apply(String s) {
-                return s.endsWith("_robot") || s.startsWith("third_");
+            // 过滤店铺机器人信息
+            List<String> robotids = Lists.newArrayList(Collections2.filter(qunarNames, new Predicate<String>() {
+                @Override
+                public boolean apply(String s) {
+                    return s.endsWith("_robot") || s.startsWith("third_");
+                }
+            }));
+            if (!CollectionUtil.isEmpty(robotids)) {
+                robots = SupplierServiceUtil.buildRobotInfoWithConfig(robotids);
+                if (!CollectionUtil.isEmpty(robots))
+                    userInfoList.addAll(robots);
             }
-        }));
-        if (!CollectionUtil.isEmpty(robotids)) {
-            robots = SupplierServiceUtil.buildRobotInfoWithConfig(robotids);
-            if (!CollectionUtil.isEmpty(robots))
-                userInfoList.addAll(robots);
-        }
 
-        Map<String, ?> UserInfoMap = getUserInfoByQunarNames(qunarNames, fields);
-        if (CollectionUtil.isEmpty(UserInfoMap)) {
+            List<Map<String, Object>> userInfos = getUserInfoByQunarNames(qunarNames, fields);
+        if (CollectionUtil.isEmpty(userInfos)) {
             if (CollectionUtil.isEmpty(userInfoList)) {
                 return null;
             } else {
@@ -1228,9 +1226,9 @@ public class SeatServiceImpl implements ISeatService {
         }
 
 
-        try {
-            @SuppressWarnings("unchecked") List<Map<String, Object>> userInfos
-                    = (List<Map<String, Object>>) UserInfoMap.get("data");
+
+//            @SuppressWarnings("unchecked") List<Map<String, Object>> userInfos
+//                    = (List<Map<String, Object>>) UserInfoMap.get("data");
             if (!CollectionUtil.isEmpty(userInfos)) {
 
                 for (Map<String, Object> userinfo : userInfos) {
@@ -1259,7 +1257,7 @@ public class SeatServiceImpl implements ISeatService {
                 return null;
             }
 
-            Map<String, Seat> seatIndexMap = getSeatIndex(getSeatListByQunarNames(qunarNames));
+            Map<String, Seat> seatIndexMap = getSeatIndex(getSeatListByQunarNames(qunarNames, shopIds));
             if (CollectionUtil.isEmpty(seatIndexMap)) {
                 if (!CollectionUtil.isEmpty(userInfoList)) {
                     return parseData(qunarNames, userInfoList);//JacksonUtil.string2Map(JacksonUtil.obj2String(JsonData.success(userInfoList)));
@@ -1272,6 +1270,7 @@ public class SeatServiceImpl implements ISeatService {
                 if (seat != null) {
                     map.put("webname", seat.getWebName());
                     map.put("suppliername", seat.getSupplierName());
+                    map.put("faceLink", seat.getFaceLink());
                 }
                 if (null != map.get("username") && !Strings.isNullOrEmpty(map.get("username").toString()))
                     map.put("username", map.get("username").toString().toLowerCase());
@@ -1379,7 +1378,7 @@ public class SeatServiceImpl implements ISeatService {
                         } else {
                             data.put("type", 0);
                         }
-                        data.put("imageurl", "https://xxx");
+                        data.put("imageurl", userinfo.get("faceLink"));
                         data.put("email", userinfo.get("email"));
                         data.put("gender", userinfo.get("gender"));
                         data.put("loginName", userinfo.get("loginName"));
@@ -1412,19 +1411,33 @@ public class SeatServiceImpl implements ISeatService {
 
 
     @Override
-    public Map<String, ?> getUserInfoByQunarNames(List<String> qunarNames, String fields) {
+    public List<Map<String, Object>> getUserInfoByQunarNames(List<String> qunarNames, String fields) {
         if (CollectionUtil.isEmpty(qunarNames)) {
             return null;
         }
-        Map<String, String> formParams = new HashMap<>();
-        formParams.put("username", Joiner.on(',').skipNulls().join(qunarNames));
-        formParams.put("outEncrypt", "true");
-        if (StringUtils.isNotBlank(fields)) {
-            formParams.put("fields", fields);
+//        Map<String, String> formParams = new HashMap<>();
+//        formParams.put("username", Joiner.on(',').skipNulls().join(qunarNames));
+//        formParams.put("outEncrypt", "true");
+//        if (StringUtils.isNotBlank(fields)) {
+//            formParams.put("fields", fields);
+//        }
+//        String jsonRes = HttpClientUtils.post(Config.USER_CENTER_INFO_URL, formParams);
+        List<HostUsers> hostUsers = hostUserDao.selectUsersByUserIds(qunarNames);
+        if (CollectionUtils.isEmpty(hostUsers)) {
+            return null;
         }
-        String jsonRes = HttpClientUtils.post(Config.USER_CENTER_INFO_URL, formParams);
-        return JacksonUtil.string2Map(jsonRes);
+        List<Map<String, Object>> jsonRes = new ArrayList<>();
+        hostUsers.stream().forEach(hostUser -> {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("username", hostUser.getUserId());
+            userMap.put("nickname", hostUser.getUserName());
+            userMap.put("webname", hostUser.getUserName());
+            jsonRes.add(userMap);
+        });
+
+        return jsonRes;
     }
+
 
     @Override
     public List<Map<String,Object>> getBnbUserInfoByQunarNames(List<String> qunarNames) {
@@ -1895,7 +1908,7 @@ public class SeatServiceImpl implements ISeatService {
         Map<String, ServiceStatusEnum> userServiceStatus = Maps.newHashMap();
 
         // 查找这几个人的最后一次修改信息
-        List<Seat> seats = getSeatListByQunarNames(qunarNameList);
+        List<Seat> seats = getSeatListByQunarNames(qunarNameList, null);
 
 
         for (Seat seat : seats) {
@@ -2254,7 +2267,7 @@ public class SeatServiceImpl implements ISeatService {
         supplier.setHotline(hotline);
 
         SeatWithStateVO seatWithStateVO = new SeatWithStateVO();
-        DistributedInfo distributedInfo = siftStrategyService.siftCsr(pid, supplier.getId(), null, host, false);
+        DistributedInfo distributedInfo = siftStrategyService.siftCsr(pid, supplier.getId(), null, host, null, false);
         logger.info("preAssignedOneSeat DistributedInfo:{}", JacksonUtil.obj2String(distributedInfo));
         if (distributedInfo != null && distributedInfo.getCsr() != null) {
             Seat seat = csrTransformSeat(distributedInfo.getCsr(), supplier.getName(), qunarName, pid);
@@ -2373,7 +2386,7 @@ public class SeatServiceImpl implements ISeatService {
     }
 
     @Override
-    public JsonData redistributionEx(long shopId, JID userQName, String pdtId, String seatQName, String host) {
+    public JsonData redistributionEx(long shopId, JID userQName, String pdtId, String seatQName, String host, Long groupId) {
         logger.debug("judgmentOrRedistribution, {} - {} - {}", userQName, shopId, pdtId);
         Supplier supplier = supplierDao.getSupplier(0, null, shopId);
 
@@ -2381,17 +2394,17 @@ public class SeatServiceImpl implements ISeatService {
             return JsonData.error("业务线错误");
         }
 
-        Robot robot = robotService.getRobotByBusiness(BusinessEnum.of(supplier.getbType()));
-        QueueMapping queueMapping = queueMappingDao.selectByCustomerNameAndShopId(userQName.toBareJID(), shopId);
-        if (queueMapping == null || robot == null || !queueMapping.getSeatName().startsWith(robot.getRobotId())) {
-            return JsonData.error("当前坐席不是机器人");
-        }
+//        Robot robot = robotService.getRobotByBusiness(BusinessEnum.of(supplier.getbType()));
+//        QueueMapping queueMapping = queueMappingDao.selectByCustomerNameAndShopId(userQName.toBareJID(), shopId);
+//        if (queueMapping == null || robot == null || !queueMapping.getSeatName().startsWith(robot.getRobotId())) {
+//            return JsonData.error("当前坐席不是机器人");
+//        }
 //
 //        if (robot != null && !robot.getRobotId().equalsIgnoreCase(seatQName)) {
 //            return JsonData.error("当前坐席不是机器人");
 //        }
 
-        QtSessionItem sessionItem = QtQueueManager.getInstance().judgmentOrRedistribution(userQName, shopId, pdtId, host,true, true);
+        QtSessionItem sessionItem = QtQueueManager.getInstance().judgmentOrRedistribution(userQName, shopId, pdtId, host, groupId, true, true);
 
         CSR csr = null;
         SeatWithStateVO seatWithStateVO = new SeatWithStateVO();
@@ -2414,12 +2427,12 @@ public class SeatServiceImpl implements ISeatService {
             seatWithStateVO.setOnlineState(OnlineState.ONLINE);
             seatWithStateVO.setSwitchOn(true);
 
-            String showName = StringUtils.isNotEmpty(seat.getWebName()) ? seat.getWebName()
-                    : (StringUtils.isNotEmpty(seat.getNickName()) ? seat.getNickName() : JID.parseAsJID(seat.getQunarName()).getNode());
+//            String showName = StringUtils.isNotEmpty(seat.getWebName()) ? seat.getWebName()
+//                    : (StringUtils.isNotEmpty(seat.getNickName()) ? seat.getNickName() : JID.parseAsJID(seat.getQunarName()).getNode());
 
-            sendSeatMsg(shopName, userQName, robot.getRobotId(), seat.getQunarName(), host, showName);
+          //  sendSeatMsg(shopName, userQName, robot.getRobotId(), seat.getQunarName(), host, showName);
         } else {
-            String robotId = SendMessage.appendQCDomain(robot.getRobotId(), host);
+            String robotId = SendMessage.appendQCDomain("robot", host);
             shopName = SendMessage.appendQCDomain(shopName, host);
             String toUserMsg = "当前店铺没有可服务客服，请稍后再试";
             ConsultUtils.sendMessage(JID.parseAsJID(shopName), userQName, JID.parseAsJID(robotId), userQName, toUserMsg, false, false, true);
