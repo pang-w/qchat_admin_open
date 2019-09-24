@@ -12,8 +12,9 @@ public class CheckJobUtil {
     public static boolean checkRun() {
         try {
             InetAddress addr = InetAddress.getLocalHost();
-            String hostname = addr.getHostName();
-            if (hostname.equals("xxx.com")) {
+            String hostname = addr.getHostAddress();
+            LOGGER.info("checkRun hostName:{}", hostname);
+            if ("100.80.129.108".equals(hostname)) {
                 return true;
             }
 

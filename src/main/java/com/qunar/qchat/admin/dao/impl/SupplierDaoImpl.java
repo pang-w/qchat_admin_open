@@ -7,6 +7,7 @@ import com.qunar.qchat.admin.model.Supplier;
 import com.qunar.qchat.admin.model.SupplierInfo;
 import com.qunar.qchat.admin.model.SupplierWithRobot;
 import com.qunar.qchat.admin.vo.SupplierGroupVO;
+import com.qunar.qchat.admin.vo.UserSeatGroupVO;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
@@ -83,6 +84,21 @@ public class SupplierDaoImpl extends BaseSqlSessionDao implements ISupplierDao{
         map.put("qName", qName);
         map.put("bType", bType);
         return this.getReadSqlSession().selectList("SupplierMapping.getSupplierBySeatQName", map);
+    }
+
+    @Override
+    public List<UserSeatGroupVO> selectSupplierGroup(int supplierId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("supplierId", supplierId);
+        return this.getReadSqlSession().selectList("SupplierMapping.selectUserSupplierGroup", map);
+    }
+
+    @Override
+    public List<UserSeatGroupVO> selectSupplierSeatGroup(String seatName, int supplierId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("seatName", seatName);
+        map.put("supplierId", supplierId);
+        return this.getReadSqlSession().selectList("SupplierMapping.selectSupplierSeatGroup", map);
     }
 
     @Override

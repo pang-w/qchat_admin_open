@@ -140,7 +140,7 @@ public class ConsultUtils {
         message.addAttribute(QChatConstant.Note.CHANNEL_ID, JacksonUtils.obj2String(channelIdValue));
 
         message.addAttribute(QChatConstant.Note.QCHAT_ID, "5");
-        message.addAttribute(QChatConstant.Note.MESSAGE_AUTO_REPLY, "true");
+        message.addAttribute(QChatConstant.Note.MESSAGE_AUTO_REPLY, "false");
         message.addAttribute(QChatConstant.Note.MESSAGE_NO_UPDATE_MSG_LOG, "true");
         message.addAttribute(QChatConstant.Note.XMLNS, QChatConstant.Note.JABBER_CLIENT);
 

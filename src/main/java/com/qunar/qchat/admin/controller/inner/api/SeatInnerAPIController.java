@@ -324,7 +324,7 @@ public class SeatInnerAPIController extends BaseController {
                 if (businessEnum == null || businessEnum == BusinessEnum.EMPTY) {
                     return JsonData.error("业务线id：" + businessId + "不存在");
                 }
-                supplierVOs = supplierService.getSupplierBySeatQName(qunarName, businessId);
+                supplierVOs = supplierService.getSupplierBySeatQName(qunarName, businessId, 0);
             }
             return JsonData.success(supplierVOs);
         } catch (Exception e) {

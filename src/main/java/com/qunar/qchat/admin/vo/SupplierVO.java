@@ -3,6 +3,7 @@ package com.qunar.qchat.admin.vo;
 import com.qunar.qchat.admin.model.Seat;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 供应商
@@ -24,6 +25,8 @@ public class SupplierVO {
     private int status;
     private long createDate;
     private int assignStrategy;
+    Set<UserSeatGroupVO> allSeatGroup;
+    Set<UserSeatGroupVO> seatGroup;
 
     public long getId() {
         return id;
@@ -132,5 +135,21 @@ public class SupplierVO {
     }
     public void setAssignStrategy(int assignStrategy) {
         this.assignStrategy = assignStrategy;
+    }
+
+    public Set<UserSeatGroupVO> getAllSeatGroup() {
+        return allSeatGroup;
+    }
+
+    public void setAllSeatGroup(Set<UserSeatGroupVO> allSeatGroup) {
+        this.allSeatGroup = allSeatGroup;
+    }
+
+    public Set<UserSeatGroupVO> getSeatGroup() {
+        return seatGroup;
+    }
+
+    public void setSeatGroup(Set<UserSeatGroupVO> seatGroup) {
+        this.seatGroup = seatGroup;
     }
 }

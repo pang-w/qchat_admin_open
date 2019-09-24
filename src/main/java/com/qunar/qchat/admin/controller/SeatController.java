@@ -210,14 +210,15 @@ public class SeatController extends BaseController{
     @MustLogin(MustLogin.ViewType.JSON)
     @ResponseBody
     @RequestMapping(value = "getSuListByQName.qunar")
-    public JsonResultVO<?> getSuListByQName(@RequestParam(value = "qName", required = true) String qName) {
+    public JsonResultVO<?> getSuListByQName(@RequestParam(value = "qName", required = true) String qName,
+                                            @RequestParam(value = "supplierId", required = false, defaultValue = "0") Integer supplierId) {
         SysUserVO sysUserVO = SessionUtils.getLoginUser();
         List<SupplierVO> curSuList = sysUserVO.getCurBuSuList();
         if (CollectionUtil.isEmpty(curSuList)) {
             return JsonResultUtil.buildFailedJsonResult(BusiResponseCodeEnum.FAIL_NOT_FOUND_RESULT.getCode(), "没有匹配供应商.");
         }
 
-        List<SupplierVO> suList = supplierService.getSupplierBySeatQName(qName, sysUserVO.getbType().getId());
+        List<SupplierVO> suList = supplierService.getSupplierBySeatQName(qName, sysUserVO.getbType().getId(), supplierId);
 
         suList = filterSupplier(curSuList, suList);
         return JsonResultUtil.buildSucceedJsonResult("success", suList);
@@ -242,7 +243,7 @@ public class SeatController extends BaseController{
 
             for (Long key : suMap.keySet()) {
                 if (curSuMap.containsKey(key)) {
-                    newSuList.add(curSuMap.get(key));
+                    newSuList.add(suMap.get(key));
                 }
             }
             suList = newSuList;

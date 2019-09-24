@@ -63,7 +63,7 @@ public interface ISupplierService {
      * @param bType
      * @return
      */
-    List<SupplierVO> getSupplierBySeatQName(String qName, int bType);
+    List<SupplierVO> getSupplierBySeatQName(String qName, int bType, int supplierId);
     
     List<SupplierVO> getSupplierBySeatQName(String qName);
 
