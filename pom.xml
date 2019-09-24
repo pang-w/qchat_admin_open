@@ -7,7 +7,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>qqchat_admin_open</name>
+    <name>qchat_admin_open</name>
     <url>http://maven.apache.org</url>
 
     <properties>
