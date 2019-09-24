@@ -4,6 +4,7 @@ import com.qunar.qchat.admin.model.Supplier;
 import com.qunar.qchat.admin.model.SupplierInfo;
 import com.qunar.qchat.admin.model.SupplierWithRobot;
 import com.qunar.qchat.admin.vo.SupplierGroupVO;
+import com.qunar.qchat.admin.vo.UserSeatGroupVO;
 
 import java.util.List;
 
@@ -38,7 +39,11 @@ public interface ISupplierDao {
     List<SupplierGroupVO> getSuGroupList(List<Long> suIdList);
 
     List<Supplier> getSupplierBySeatQName(String qName, int bType);
-    
+
+    List<UserSeatGroupVO> selectSupplierGroup(int supplierId);
+
+    List<UserSeatGroupVO> selectSupplierSeatGroup(String seatName, int supplierId);
+
     List<Supplier> getSupplierByIds(List<Long> ids);
 
     int saveSupplierInfo(SupplierInfo supplierInfo);

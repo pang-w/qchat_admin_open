@@ -21,6 +21,7 @@ import com.qunar.qchat.admin.vo.third.SupplierOperatorInfo;
 import com.qunar.qchat.admin.model.qchat.QChatConstant;
 import com.qunar.qtalk.ss.sift.dao.HotlineSupplierMappingDao;
 import com.qunar.qtalk.ss.sift.entity.HotlineSupplierMapping;
+import com.qunar.qtalk.ss.utils.JacksonUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -388,18 +390,48 @@ public class SupplierServiceImpl implements ISupplierService {
     }
 
     @Override
-    public List<SupplierVO> getSupplierBySeatQName(String qName, int bType) {
+    public List<SupplierVO> getSupplierBySeatQName(String qName, int bType, int supplierId) {
         List<Supplier> suList = supplierDao.getSupplierBySeatQName(qName, bType);
         if (CollectionUtil.isEmpty(suList)) {
             return null;
         }
-
+        List<UserSeatGroupVO> allSeatGroup = new ArrayList<>();
+        List<UserSeatGroupVO> seatGroup = new ArrayList<>();
+        if (supplierId > 0) {
+            allSeatGroup = supplierDao.selectSupplierGroup(supplierId);
+            seatGroup = supplierDao.selectSupplierSeatGroup(qName, supplierId);
+        }
         List<SupplierVO> suVOList = new ArrayList<>(suList.size());
         for (Supplier s : suList) {
-            suVOList.add(SupplierServiceUtil.modelToVO(s));
+            suVOList.add(modelToVO(s, allSeatGroup, seatGroup, supplierId));
         }
+        logger.debug("getSupplierBySeatQName supplier:{}", JacksonUtils.obj2String(suVOList));
 
         return suVOList;
+    }
+
+    private SupplierVO modelToVO(Supplier s, List<UserSeatGroupVO> allSeatGroup, List<UserSeatGroupVO> seatGroup, Integer supplierId) {
+        if(s == null) {return null;}
+        SupplierVO vo = new SupplierVO();
+
+        vo.setId(s.getId());
+        vo.setName(s.getName());
+        vo.setBusiType(s.getbType());
+        vo.setStatus(s.getStatus());
+        vo.setExt_flag(s.getBQueue());
+        vo.setBusiSupplierId(s.getBusiSupplierId());
+        if (s.getCreateDate() != null) {
+            vo.setCreateDate(s.getCreateDate().getTime());
+        }
+        vo.setAssignStrategy(s.getAssignStrategy());
+        if (supplierId == s.getId()) {
+            vo.setAllSeatGroup(new HashSet<>(allSeatGroup));
+            vo.setSeatGroup(new HashSet<>(seatGroup));
+        } else {
+            vo.setAllSeatGroup(new HashSet<>());
+            vo.setSeatGroup(new HashSet<>());
+        }
+        return vo;
     }
 
     @Override

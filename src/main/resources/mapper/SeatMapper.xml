@@ -322,7 +322,7 @@
         left join seat_group sg on sgm.group_id = sg.id
         left join seat s on s.id = sgm.seat_id
         WHERE
-         s.status = 1
+         s.status = 1 and sg.supplier_id=s.supplier_id
         <if test="list != null and list.size() > 0">
             and sgm.seat_id IN
             <foreach collection="list" open="(" close=")" separator="," item="seatId">

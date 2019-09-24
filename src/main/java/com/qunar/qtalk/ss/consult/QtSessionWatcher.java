@@ -66,8 +66,8 @@ public class QtSessionWatcher {
 
     public void setupTimer() {
 
-        if (!CheckJobUtil.checkRun())
-            return;
+//        if (!CheckJobUtil.checkRun())
+//            return;
 
 //        if (clearSessionTimer != null)
 //            clearSessionTimer.cancel();

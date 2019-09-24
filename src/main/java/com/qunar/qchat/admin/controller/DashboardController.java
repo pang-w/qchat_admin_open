@@ -39,7 +39,7 @@ public class DashboardController {
         String user = request.getParameter("username");
         String qSessionId = UUID.randomUUID().toString().replace("-", "");
         CookieUtil.setCookie(SessionConstants.QSESSION_ID, qSessionId, response);
-        RedisUtil.set(qSessionId, user, 60, TimeUnit.MINUTES);
+        RedisUtil.set(qSessionId, user, 1, TimeUnit.DAYS);
         Map<String, String> result = new HashMap<String, String>();
         result.put("username", user);
         return JsonResultUtil.buildSucceedJsonResult(result);
