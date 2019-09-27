@@ -319,7 +319,6 @@ public class QtQueueManager {
                             }
 
                             //
-                            // TODO:获取历史消息，扔到队列中，注意，这条方法一定要放在最后，不然就sb了
                             ConsultUtils.resendUnsentMesasge(queueKey.getShopId(), currentUser.getJid());
                         } else {
                             QtSessionItem item = QtSessionItem.parseFromRedis(newKey);

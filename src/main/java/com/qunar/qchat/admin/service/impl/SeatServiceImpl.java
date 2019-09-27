@@ -52,6 +52,7 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.util.TextUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -2393,6 +2394,13 @@ public class SeatServiceImpl implements ISeatService {
         if (supplier == null || BusinessEnum.of(supplier.getbType()) == null) {
             return JsonData.error("业务线错误");
         }
+        int hourOfDay = new DateTime(System.currentTimeMillis()).getHourOfDay();
+        int starTime = com.qunar.qtalk.ss.constants.Config.START_SERVICE_TIME;
+        int endTime = com.qunar.qtalk.ss.constants.Config.END_SERVICE_TIME;
+        if (hourOfDay < starTime || hourOfDay > endTime) {
+            String errorMsg = StringUtils.isNotEmpty(supplier.getNoServiceWelcomes()) ? supplier.getNoServiceWelcomes() : "不在服务时间内，请稍后再试";
+            return JsonData.error(errorMsg);
+        }
 
 //        Robot robot = robotService.getRobotByBusiness(BusinessEnum.of(supplier.getbType()));
 //        QueueMapping queueMapping = queueMappingDao.selectByCustomerNameAndShopId(userQName.toBareJID(), shopId);
@@ -2432,16 +2440,16 @@ public class SeatServiceImpl implements ISeatService {
 
           //  sendSeatMsg(shopName, userQName, robot.getRobotId(), seat.getQunarName(), host, showName);
         } else {
-            String robotId = SendMessage.appendQCDomain("robot", host);
-            shopName = SendMessage.appendQCDomain(shopName, host);
-            String toUserMsg = "当前店铺没有可服务客服，请稍后再试";
-            ConsultUtils.sendMessage(JID.parseAsJID(shopName), userQName, JID.parseAsJID(robotId), userQName, toUserMsg, false, false, true);
+//            String robotId = SendMessage.appendQCDomain("robot", host);
+//            shopName = SendMessage.appendQCDomain(shopName, host);
+//            String toUserMsg = "当前店铺没有可服务客服，请稍后再试";
+//            ConsultUtils.sendMessage(JID.parseAsJID(shopName), userQName, JID.parseAsJID(robotId), userQName, toUserMsg, false, false, true);
 
             if (sessionItem != null)
                 logger.info("sessionItem id = {}", sessionItem.getSeatId());
             else
                 logger.info("sessionItem is null");
-            return JsonData.error("没有分配到客服，请稍候再试");
+            return JsonData.error("当前店铺没有可服务客服，请稍后再试");
         }
         return JsonData.success(seatWithStateVO);
     }
@@ -2506,5 +2514,7 @@ public class SeatServiceImpl implements ISeatService {
                 "update wxBind before:" + seatDB.get(0).getBindWx() + " after:" + bindWx);
         return JsonData.success("success");
     }
+
+
 
 }

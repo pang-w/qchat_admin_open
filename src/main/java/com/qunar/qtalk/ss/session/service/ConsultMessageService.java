@@ -152,8 +152,9 @@ public class ConsultMessageService {
         LOGGER.info("[{}, {}] get  realto is :{}", realFrom, to, realTo);
 
         if (realTo == null) {
+            LOGGER.info("makeNewConsultMsg no seat");
             // 不存在调用，realTo 存在时再次回调本方法
-            QtQueueManager.getInstance().saveMessageWithoutRealto(fromJid, shopid, consultMessage);
+           // QtQueueManager.getInstance().saveMessageWithoutRealto(fromJid, shopid, consultMessage);
         } else {
             String bareJID = realTo.toBareJID();
 //            String msg_id = getString(consultMessage.get("msg_id"));

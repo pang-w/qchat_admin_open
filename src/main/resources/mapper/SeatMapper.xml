@@ -241,7 +241,10 @@
                 #{qunarName}
             </foreach>
         </if>
-        AND seat.supplier_id = supplier.id and supplier.id=#{supplierId}
+        AND seat.supplier_id = supplier.id
+        <if test="supplierId != null">
+          and supplier.id=#{supplierId}
+        </if>
     </select>
 
     <select id="getSeatListByPid" parameterType="list" resultType="com.qunar.qchat.admin.model.Seat">
